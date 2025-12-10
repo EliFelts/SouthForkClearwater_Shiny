@@ -115,7 +115,7 @@ ui <- page_navbar(
     selectInput(
       inputId = "user_spp",
       label = "Choose Species",
-      choices = c("Steelheead", "Chinook"),
+      choices = c("Steelhead", "Chinook"),
       selected = "Steelhead",
       selectize = FALSE
     )
@@ -165,7 +165,30 @@ ui <- page_navbar(
 )
 
 server <- function(input, output, session) {
+  # make current spawn year reactive to species selection
 
+  sy_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- current_sy_key |>
+      filter(species == input$user_spp)
+  })
+
+  # number of individuals, reactive to species selection
+
+  ind.dat_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- individuals.dat %>%
+      filter(species == input$user_spp)
+  })
+
+  # make an output of the number of individuals to
+  # go to the value box
+
+  output$ind_count_txt <- renderText({
+    nrow(req(ind.dat_reactive()))
+  })
 }
 
 shinyApp(ui, server)
