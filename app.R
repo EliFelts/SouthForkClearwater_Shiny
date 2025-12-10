@@ -237,6 +237,32 @@ server <- function(input, output, session) {
       sep = " "
     )
   })
+
+  # make the flow plot as a reactive
+
+  flowplot_reactive <- reactive({
+    flow.plot <- flow.dat %>%
+      mutate(date = as_date(date)) %>%
+      ggplot(aes(x = date, y = mean_discharge, group = group)) +
+      geom_line(aes(text = str_c(" Date:", date,
+        "<br>", "Mean Discharge (cfs): ", mean_discharge,
+        sep = " "
+      ))) +
+      scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      labs(x = "", y = "Mean Discharge at Stites Gaging Station")
+  })
+
+  # render the flow plot as a plotly object
+
+  output$flow_plot <- renderPlotly({
+    plot1 <- flowplot_reactive()
+
+    ggplotly(plot1,
+      tooltip = c("text")
+    )
+  })
 }
 
 shinyApp(ui, server)
