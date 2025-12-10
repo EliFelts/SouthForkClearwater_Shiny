@@ -189,6 +189,24 @@ server <- function(input, output, session) {
   output$ind_count_txt <- renderText({
     nrow(req(ind.dat_reactive()))
   })
+
+  # reactive for number of new in the last week
+
+  lastweek_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- individuals.dat %>%
+      filter(
+        species == input$user_spp,
+        sfc_entry_final >= today() - days(7)
+      )
+  })
+
+  # make text output of the number of new in last week
+
+  output$lastweek_count_txt <- renderText({
+    nrow(req(lastweek_reactive()))
+  })
 }
 
 shinyApp(ui, server)
