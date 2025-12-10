@@ -207,6 +207,36 @@ server <- function(input, output, session) {
   output$lastweek_count_txt <- renderText({
     nrow(req(lastweek_reactive()))
   })
+
+  # reactive for percent of run complete as of today
+
+  runstatus_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- today_run %>%
+      filter(species == input$user_spp)
+  })
+
+  # output of median percent complete today
+
+  output$todayrun_median <- renderText({
+    dat <- runstatus_reactive() %>%
+      pull(median_percentcomplete)
+
+    str_c(dat, "%", sep = " ")
+  })
+
+  # output for range of percent complete today
+
+  output$todayrun_range <- renderText({
+    dat <- runstatus_reactive()
+
+    str_c("Range:", dat$min_percentcomplete, "%",
+      "-",
+      dat$max_percentcomplete, "%",
+      sep = " "
+    )
+  })
 }
 
 shinyApp(ui, server)
