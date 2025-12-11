@@ -37,10 +37,17 @@ individuals.dat <- readRDS("data/individuals") %>%
   mutate(sfc_entry_final = as_date(as.POSIXct(sfc_entry_final)))
 
 current_sy_key <- tibble(species = c("Chinook", "Bull Trout", "Pacific Lamprey", "Cutthroat Trout", "Steelhead")) %>%
-  mutate(current_sy = case_when(
-    yday(today()) >= 183 & species == "Steelhead" ~ year(today()) + 1,
-    TRUE ~ year(today())
-  ))
+  mutate(
+    current_sy = case_when(
+      yday(today()) >= 183 & species == "Steelhead" ~ year(today()) + 1,
+      TRUE ~ year(today())
+    ),
+    today.jday = yday(today()),
+    today.dummy = case_when(
+      today.jday < 183 & species == "Steelhead" ~ as.Date(today.jday, origin = "1977-01-01"),
+      TRUE ~ as.Date(today.jday, origin = "1976-01-01")
+    )
+  )
 
 alldaily.dat <- readRDS("data/alldaily") |>
   filter(spawn_year > 2017) |>
@@ -248,7 +255,6 @@ server <- function(input, output, session) {
         "<br>", "Mean Discharge (cfs): ", mean_discharge,
         sep = " "
       ))) +
-      scale_x_date(date_breaks = "1 month", date_labels = "%b") +
       theme_bw() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(x = "", y = "Mean Discharge at Stites Gaging Station")
@@ -258,6 +264,71 @@ server <- function(input, output, session) {
 
   output$flow_plot <- renderPlotly({
     plot1 <- flowplot_reactive()
+
+    ggplotly(plot1,
+      tooltip = c("text")
+    )
+  })
+
+
+  # make all daily data reactive to user selected species
+
+  alldaily_reactive <- reactive({
+    req(input$user_spp)
+
+    sy.dat <- sy_reactive()
+
+    alldaily.dat |>
+      filter(species == input$user_spp) |>
+      filter(spawn_year < sy.dat$current_sy |
+        (spawn_year == sy.dat$current_sy &
+          dummy_jday <= sy.dat$today.jday))
+  })
+
+  # make daily unique fish for current year filter by
+  # user selected species
+
+  daily_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- daily.dat |>
+      filter(species == input$user_spp)
+  })
+
+  # make a reactive plot of cumulative numbers in
+
+  compplot_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- alldaily_reactive()
+
+
+    compplot <- dat %>%
+      ggplot(aes(
+        x = dummy_date, y = daily_cumulative_n,
+        group = spawn_year, color = as.factor(yr_category)
+      )) +
+      geom_line(aes(text = str_c(" Date:", format(dummy_date, "%b %d"),
+        "<br>",
+        "Spawn Year:", spawn_year,
+        "<br>",
+        "Number In:", round(daily_cumulative_n),
+        sep = " "
+      ))) +
+      theme_bw() +
+      scale_color_manual(values = c("steelblue", "gray70")) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      labs(
+        x = "Date entered South Fork Clearwater River",
+        y = "# PIT Tags in, Year-To-Date",
+        color = ""
+      )
+  })
+
+  # Render the comp plot as a plotly object
+
+  output$comp_plot <- renderPlotly({
+    plot1 <- compplot_reactive()
 
     ggplotly(plot1,
       tooltip = c("text")
