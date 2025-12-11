@@ -57,7 +57,8 @@ alldaily.dat <- readRDS("data/alldaily") |>
       "Current", "Previous"
     ),
     dummy_jday = yday(dummy_date)
-  )
+  ) %>%
+  filter(dummy_date <= today.dummy)
 
 # calculate estimate of how much of the run is complete
 
