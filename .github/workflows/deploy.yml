@@ -73,17 +73,9 @@ jobs:
           Rscript -e 'install.packages("renv", repos="https://cloud.r-project.org")'
           Rscript -e 'renv::restore()'
           
-           - name: 🛠️ Run data update script
+      - name: 🛠️ Run data update script
         run: Rscript ptagis_processing.R
         
-      - name: 🐛 Check for data/ contents
-        run: |
-         echo "=== Does data/ exist? ==="
-         if [ -d "data" ]; then echo "Yes, data/ exists."; else echo "No, data/ does NOT exist."; fi
-         echo ""
-         echo "=== Listing contents of data/ ==="
-         ls -la data || echo "data/ folder is missing or empty"
-         
       - name: 🚀 Deploy to shinyapps.io
         env:
           SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
