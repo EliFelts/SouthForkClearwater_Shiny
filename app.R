@@ -91,13 +91,17 @@ lf.dat <- individuals.dat %>%
     release_lifestage == "Adult",
     !is.na(length_mm)
   ) %>%
+  mutate(length_in = length_mm / 25.4) %>%
   group_by(species) |>
-  mutate(length_bin = floor(length_mm / 25) * 25) %>%
+  mutate(
+    length_bin = floor(length_mm / 25) * 25,
+    length_bin_in = floor(length_in * 2) / 2
+  ) %>%
   mutate(
     mean_length = mean(length_mm),
     total_n = n()
   ) %>%
-  group_by(species, length_bin) %>%
+  group_by(species, length_bin_in) %>%
   summarize(
     freq = n(),
     total_sample = first(total_n),
@@ -256,6 +260,7 @@ server <- function(input, output, session) {
         "<br>", "Mean Discharge (cfs): ", mean_discharge,
         sep = " "
       ))) +
+      scale_x_date(date_breaks = "1 month", date_labels = "%b") +
       theme_bw() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(x = "", y = "Mean Discharge at Stites Gaging Station")
@@ -332,6 +337,101 @@ server <- function(input, output, session) {
     plot1 <- compplot_reactive()
 
     ggplotly(plot1,
+      tooltip = c("text")
+    )
+  })
+
+  # make the plot for daily numbers of pit tags entering
+
+  dailyentry_reactive <- reactive({
+    dat <- daily_reactive()
+
+    entry.plot <- ggplot() +
+      geom_col(
+        data = dat, fill = "dodgerblue", color = "black",
+        aes(
+          x = sfc_final_date, y = n,
+          text = str_c(" Date:", sfc_final_date,
+            "<br>", "Number Fish Entered:", n,
+            sep = " "
+          )
+        )
+      ) +
+      scale_x_date(date_breaks = "1 week", date_labels = "%b %d") +
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      labs(
+        x = "Date entered South Fork Clearwater",
+        y = "Number of unique PIT-Tagged Fish"
+      )
+  })
+
+  # Render the daily tally plot as a plotly object
+
+  output$entry_plot <- renderPlotly({
+    plot1 <- dailyentry_reactive()
+
+    ggplotly(plot1,
+      tooltip = c("text")
+    )
+  })
+
+  # make the plotly graph of a length frequency for all the
+  # fish to come through this spawn year
+
+  # filter length data by user selected species in
+  # a reactive
+
+  lf_reactive <- reactive({
+    req(input$user_spp)
+
+    dat <- lf.dat |>
+      filter(species == input$user_spp)
+  })
+
+  output$lf_plot <- renderPlotly({
+    dat <- lf_reactive()
+
+    plot.lf <- dat %>%
+      ggplot(aes(x = length_bin_in, y = freq)) +
+      geom_col(
+        aes(text = str_c(
+          "Length Bin: ", length_bin_in,
+          "<br>",
+          "Number: ", freq
+        )),
+        fill = "steelblue", color = "black"
+      ) +
+      geom_vline(
+        data = dat, aes(xintercept = first(mean_length_in)),
+        linetype = "dashed", color = "black"
+      ) +
+      # geom_text(x=min(dat$length_bin, na.rm=T)*1.05,
+      #           y=max(dat$freq, na.rm=T) * 0.88,
+      #           label=str_c("N = ",first(lf.dat$total_sample)),
+      #           size=4,hjust=0)+
+      # geom_text(x=min(dat$length_bin, na.rm=T)*1.05,
+      #           y=max(dat$freq, na.rm=T) * 0.95,
+      #           label=str_c("Mean Length = ",
+      #                       str_c(round(first(dat$mean_length)),"mm",sep=" ")),
+      #           size=4,hjust=0)+
+      scale_x_continuous(breaks = seq(
+        min(dat$length_bin_in),
+        max(dat$length_bin_in), 0.5
+      )) +
+      scale_y_continuous(breaks = scales::breaks_pretty(n = 10)) +
+      theme_bw() +
+      labs(
+        x = "Length bin (inches)",
+        y = str_c("Number of Fish", "N =", first(dat$total_sample),
+          sep = " "
+        )
+      ) +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      )
+
+    ggplotly(plot.lf,
       tooltip = c("text")
     )
   })

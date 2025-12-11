@@ -150,7 +150,7 @@ sfc_individuals.summary <- sfc_detections.test %>%
   ))
 
 sfc_entry.summary <- sfc_individuals.summary %>%
-  mutate(sfc_final_date = as.POSIXct(sfc_entry_final)) %>%
+  mutate(sfc_final_date = as_date(as.POSIXct(sfc_entry_final))) %>%
   group_by(sfc_final_date, spawn_year, species) %>%
   summarise(n = n()) %>%
   ungroup() %>%
