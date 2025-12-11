@@ -18,8 +18,6 @@ library(readr)
 library(ggokabeito)
 
 
-
-
 conflicts_prefer(
   DT::renderDT,
   dplyr::filter,
@@ -61,7 +59,7 @@ alldaily.dat <- readRDS("data/alldaily") |>
     ),
     dummy_jday = yday(dummy_date)
   ) %>%
-  filter(dummy_date <= today.dummy)
+  filter(yr_category == "Previous" | dummy_date <= today.dummy)
 
 # calculate estimate of how much of the run is complete
 
