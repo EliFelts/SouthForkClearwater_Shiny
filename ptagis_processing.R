@@ -15,7 +15,7 @@ conflicts_prefer(
 # set the timeout above the default of 60 seconds bc
 # sometimes the API calls are slow
 
-options(timeout = 600)
+options(timeout = 1200)
 
 # need to create a data directory in the processing
 # code so it gets stored in github actions

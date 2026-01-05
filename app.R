@@ -288,8 +288,7 @@ server <- function(input, output, session) {
     alldaily.dat |>
       filter(species == input$user_spp) |>
       filter(spawn_year < sy.dat$current_sy |
-        (spawn_year == sy.dat$current_sy &
-          dummy_jday <= sy.dat$today.jday))
+        (spawn_year == sy.dat$current_sy))
   })
 
   # make daily unique fish for current year filter by
