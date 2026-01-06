@@ -142,7 +142,7 @@ ui <- page_navbar(
         showcase = fa("fish-fins")
       ),
       value_box(
-        title = "New iin the Last Week",
+        title = "New in the Last Week",
         value = textOutput("lastweek_count_txt"),
         showcase = bs_icon("graph-up-arrow")
       ),
